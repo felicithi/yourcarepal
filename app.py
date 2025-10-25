@@ -802,7 +802,15 @@ def get_greeting_response(user_input: str) -> str:
             break
     
     from datetime import datetime
-    current_hour = datetime.now().hour
+    import pytz
+    
+    # Use Philippines timezone for consistent greetings
+    try:
+        ph_tz = pytz.timezone('Asia/Manila')
+        current_hour = datetime.now(ph_tz).hour
+    except:
+        # Fallback to local time if pytz not available
+        current_hour = datetime.now().hour
     
     if 5 <= current_hour < 12:
         time_greeting = "Good morning"
