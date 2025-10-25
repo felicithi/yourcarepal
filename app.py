@@ -1211,15 +1211,28 @@ def main():
 
     st.sidebar.header("Settings")
     
-    embedded_key = "YOUR_OPENAI_API_KEY_HERE"
+    # Try to get API key from Streamlit secrets first
+    try:
+        secrets_key = st.secrets.get("OPENAI_API_KEY", "")
+    except:
+        secrets_key = ""
     
-    use_embedded_key = st.sidebar.checkbox("Use embedded API key", value=False, help="Use the pre-configured API key for immediate access")
+    # Check if we have a valid API key from secrets
+    has_secrets_key = secrets_key and secrets_key != "YOUR_OPENAI_API_KEY_HERE" and len(secrets_key) > 20
     
-    if use_embedded_key:
-        os.environ["OPENAI_API_KEY"] = embedded_key
+    if has_secrets_key:
+        use_embedded_key = st.sidebar.checkbox("Use API key from secrets", value=True, help="Use the API key configured in Streamlit secrets")
+        
+        if use_embedded_key:
+            os.environ["OPENAI_API_KEY"] = secrets_key
+        else:
+            if "OPENAI_API_KEY" in os.environ:
+                del os.environ["OPENAI_API_KEY"]
     else:
-        if "OPENAI_API_KEY" in os.environ:
-            del os.environ["OPENAI_API_KEY"]
+        # Fallback to manual input
+        manual_key = st.sidebar.text_input("OpenAI API Key (optional)", type="password", help="Enter your OpenAI API key for AI features")
+        if manual_key:
+            os.environ["OPENAI_API_KEY"] = manual_key
     
     if os.getenv("OPENAI_API_KEY"):
         st.sidebar.markdown("**🤖 AI Mode:** Enhanced responses with OpenAI")
