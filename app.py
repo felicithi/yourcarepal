@@ -25,6 +25,12 @@ DISCLAIMER = (
 )
 
 BASE_SYSTEM_PROMPT = f"""You are The Care Pal, a friendly basic health helper based in the Philippines.
+
+STRICT DOMAIN LIMITATIONS:
+- ONLY answer health, wellness, nutrition, exercise, first aid, and medical questions.
+- REFUSE to answer any non-health related questions (history, geography, science, general knowledge, etc.).
+- If asked about non-health topics, politely redirect: "I'm a health assistant and can only help with health and wellness questions. How can I help you with your health today?"
+
 Domain focus:
 - Only cover common wellness topics: first aid tips, common illnesses (cold, flu, headache, stomach ache, minor injuries), nutrition/hydration, exercise, stress management.
 - Avoid deep medical diagnosis and do not provide prescriptions or exact drug dosages.
@@ -878,8 +884,41 @@ def extract_name_from_input(user_input: str) -> str:
     return None
 
 
+def is_non_health_question(text: str) -> bool:
+    """Check if the question is not health-related"""
+    non_health_keywords = [
+        "jose rizal", "rizal", "history", "philippine history", "hero",
+        "biggest planet", "planet", "solar system", "space", "astronomy",
+        "math", "mathematics", "equation", "solve", "calculate",
+        "weather", "climate", "temperature", "rain", "storm",
+        "politics", "government", "election", "president",
+        "sports", "basketball", "football", "game", "team",
+        "technology", "computer", "programming", "software",
+        "cooking", "recipe", "food preparation", "kitchen",
+        "travel", "vacation", "tourism", "place", "country",
+        "education", "school", "study", "exam", "test",
+        "entertainment", "movie", "music", "book", "story"
+    ]
+    
+    return any(keyword in text for keyword in non_health_keywords)
+
 def local_response(user_input: str, persona: str) -> str:
     text = user_input.lower()
+
+    # Check for non-health questions first
+    if is_non_health_question(text):
+        return f"""{DISCLAIMER}
+
+I'm a health assistant and can only help with health and wellness questions. 
+
+I can help you with:
+• First aid tips for minor injuries  
+• Common illnesses (colds, headaches, etc.)  
+• Nutrition and hydration advice  
+• Exercise recommendations  
+• Stress management techniques  
+
+How can I help you with your health today?"""
 
     greeting_words = ["hello", "hey", "good morning", "good afternoon", "good evening", "greetings"]
     if any(word in text for word in greeting_words) or text.strip() == "hi":
@@ -1299,9 +1338,28 @@ def main():
             })
             st.stop()
 
+        # Check for non-health questions
+        if is_non_health_question(user_input):
+            non_health_response = f"""{DISCLAIMER}
+
+I'm a health assistant and can only help with health and wellness questions. 
+
+I can help you with:
+• First aid tips for minor injuries  
+• Common illnesses (colds, headaches, etc.)  
+• Nutrition and hydration advice  
+• Exercise recommendations  
+• Stress management techniques  
+
+How can I help you with your health today?"""
+            with st.chat_message("assistant"):
+                st.markdown(non_health_response)
+            st.session_state.messages.append({"role": "assistant", "content": non_health_response})
+            st.stop()
+
         if is_disallowed(user_input):
             category = get_disallowed_category(user_input)
-            refusal = BLOCKLIST_RESPONSES.get(category, f"{DISCLAIMER}\n\nI can’t assist with that request. Please consult a licensed healthcare provider.")
+            refusal = BLOCKLIST_RESPONSES.get(category, f"{DISCLAIMER}\n\nI can't assist with that request. Please consult a licensed healthcare provider.")
             with st.chat_message("assistant"):
                 st.markdown(refusal)
             st.session_state.messages.append({"role": "assistant", "content": refusal})
