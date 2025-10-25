@@ -1211,21 +1211,15 @@ def main():
 
     st.sidebar.header("Settings")
     
-    # Check for API key in environment variables or Streamlit secrets
-    api_key = os.getenv("OPENAI_API_KEY")
+    embedded_key = "YOUR_OPENAI_API_KEY_HERE"
     
-    if not api_key:
-        # Try to get from Streamlit secrets
-        try:
-            api_key = st.secrets["OPENAI_API_KEY"]
-        except:
-            api_key = None
+    use_embedded_key = st.sidebar.checkbox("Use embedded API key", value=False, help="Use the pre-configured API key for immediate access")
     
-    if api_key:
-        os.environ["OPENAI_API_KEY"] = api_key
-        st.sidebar.success("✅ OpenAI API key found!")
+    if use_embedded_key:
+        os.environ["OPENAI_API_KEY"] = embedded_key
     else:
-        st.sidebar.warning("⚠️ No OpenAI API key found. App will run in offline mode.")
+        if "OPENAI_API_KEY" in os.environ:
+            del os.environ["OPENAI_API_KEY"]
     
     if os.getenv("OPENAI_API_KEY"):
         st.sidebar.markdown("**🤖 AI Mode:** Enhanced responses with OpenAI")
